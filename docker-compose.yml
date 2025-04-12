@@ -4,8 +4,8 @@
 services:
   api:
     container_name: LibreChat
-    ports:
-      - "${PORT}:${PORT}"
+    expose:
+      - "${PORT}"
     depends_on:
       - mongodb
       - rag_api
@@ -15,25 +15,15 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - HOST=0.0.0.0
-      - MONGO_URI=mongodb://mongodb:27017/LibreChat
-      - MEILI_HOST=http://meilisearch:7700
       - RAG_PORT=${RAG_PORT:-8000}
       - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
-    volumes:
-      - type: bind
-        source: ./.env
-        target: /app/.env
-      - ./images:/app/client/public/images
-      - ./uploads:/app/uploads
-      - ./logs:/app/api/logs
   mongodb:
     container_name: chat-mongodb
     image: mongo
     restart: always
     user: "${UID}:${GID}"
     volumes:
-      - ./data-node:/data/db
+      - mongodata:/data/db
     command: mongod --noauth
   meilisearch:
     container_name: chat-meilisearch
@@ -41,11 +31,9 @@ services:
     restart: always
     user: "${UID}:${GID}"
     environment:
-      - MEILI_HOST=http://meilisearch:7700
-      - MEILI_NO_ANALYTICS=true
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
     volumes:
-      - ./meili_data_v1.12:/meili_data
+      - meilidata:/meili_data
   vectordb:
     container_name: vectordb
     image: ankane/pgvector:latest
@@ -65,8 +53,8 @@ services:
     restart: always
     depends_on:
       - vectordb
-    env_file:
-      - .env
 
 volumes:
   pgdata2:
+  mongodata:
+  meilidata:
